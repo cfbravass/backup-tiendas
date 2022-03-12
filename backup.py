@@ -24,7 +24,6 @@ from drive import Drive
 from utilities import pause_and_exit
 import json
 import os
-import sys
 
 
 def main():
