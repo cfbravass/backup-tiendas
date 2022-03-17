@@ -73,10 +73,16 @@ def upload_folders():
                     'title': file,
                     'parents': [{'id': parent_id}]
                 }
-                media = DRIVE.CreateFile(file_metadata)
-                media.SetContentFile(file_path)
-                media.Upload()
-                print('OK')
+
+                try:
+                    media = DRIVE.CreateFile(file_metadata)
+                    media.SetContentFile(file_path)
+                    media.Upload()
+                    print('OK')
+                except Exception as e:
+                    print('ERROR')
+                    print(e)
+                    continue
 
 
 def get_or_create_folder_id(name, parent_id):
