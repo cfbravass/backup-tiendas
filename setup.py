@@ -1,21 +1,6 @@
 #!/usr/bin/env python3
 '''
-Copyright (C) 2022 Santiago Agudelo
-
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 3 as published by
-the Free Software Foundation.
-
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.
+Setup Program
 '''
 
 
@@ -64,12 +49,14 @@ def create_folder(name, parent_id):
     return folder_id['id']
 
 
-def get_or_create_folder_id(name, parent_id):
+def get_or_create_folder_id(parent_id):
     '''
     Create or get folder id
     '''
-    print('\nCarpeta backup destino...\t', end='\t')
-    # Get folder id
+    print('\nCarpeta backup destino...')
+    name = input('NOMBRE TIENDA: ').strip()
+    while name == '':
+        name = input('NOMBRE TIENDA: ').strip()
     f_id = get_folder_id(name, parent_id) or create_folder(name, parent_id)
     print('OK\n')
     return f_id
@@ -82,8 +69,11 @@ def config():
     print('\nConfigurando...\t', end='\t')
     get_local_folders()
     get_days_to_keep()
-    CONFIG['drive_folder_id'] = get_or_create_folder_id(
-        'BACKUP_TIENDA', 'root')
+
+    # get drive folder name
+
+
+    CONFIG['drive_folder_id'] = get_or_create_folder_id('root')
 
     # Create config file
     with open('config.json', 'w') as f:
@@ -104,6 +94,8 @@ def get_days_to_keep():
         if inp.isdigit() and int(inp) > 0:
             CONFIG['days_to_keep'] = int(inp)
             ok = True
+        else:
+            print('Debe ingresar un número mayor a 0\n')
 
 
 def get_local_folders():
@@ -112,14 +104,14 @@ def get_local_folders():
     '''
     ok = False
     idx = 1
-    print('\n\nIngrese las carpetas locales:')
+    print('\n\nIngrese las rutas a carpetas locales:')
     print('\t- deje en blanco para finalizar\n')
     while not ok:
         inp = input(f'PATH #{idx}: ')
         if inp == '' and CONFIG['local_folders']:
             ok = True
         elif inp == '':
-            print('Ingrese al menos una carpeta\n')
+            print('Debe ingresar al menos una carpeta\n')
         elif os.path.isdir(inp):
             CONFIG['local_folders'].append(inp)
             idx += 1
@@ -132,10 +124,14 @@ def auth():
     Authenticate with Google Drive
     '''
     print('\nAutenticando...\t', end='\t')
-    gauth = GoogleAuth()
-    gauth.LocalWebserverAuth()
-    global DRIVE
-    DRIVE = GoogleDrive(gauth)
+    try:
+        gauth = GoogleAuth()
+        gauth.LocalWebserverAuth()
+        global DRIVE
+        DRIVE = GoogleDrive(gauth)
+    except Exception as e:
+        print(f'ERROR\n\n{e}')
+        pause_and_exit(1)
     print('OK\n')
 
 

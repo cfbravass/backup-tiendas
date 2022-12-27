@@ -129,7 +129,7 @@ def remove_old_backups():
             try:
                 backup_date = datetime.strptime(backup['title'], '%d-%m-%Y')
                 now = datetime.now()
-                if (now - backup_date).days > CONFIG['days_to_keep']:
+                if (now - backup_date).days >= CONFIG['days_to_keep']:
                     print(f'backup {backup["title"]}\t\t', end='\t')
                     backup.Delete()
                     print('ELIMINADO\n')
@@ -178,10 +178,9 @@ def check_config():
         for folder in folders_list:
             if folder['id'] == CONFIG['drive_folder_id']:
                 print('OK\n')
-                break
-            else:
-                print('ERROR\nNo se encontró el destino en Google Drive')
-                pause_and_exit(1)
+                return True
+        print('ERROR\nNo se encontró el destino en Google Drive')
+        pause_and_exit(1)
     except Exception as e:
         print('ERROR\nNo se pudo verificar la carpeta destino')
         print(e)
