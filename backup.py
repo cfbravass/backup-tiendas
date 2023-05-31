@@ -25,12 +25,15 @@ from utilities import pause_and_exit
 import json
 import os
 
+# New global variable to store the folder tree
+FOLDER_TREE = {}
+
 
 def main():
     '''
     Main function
     '''
-    check_config()  # 1
+    check_config()
     remove_old_backups()
     upload_folders()
     print('\n\n_________________\nBACKUP COMPLETADO\n')
@@ -53,36 +56,57 @@ def upload_folders():
     # Upload files
     print('Carga de archivos al servidor...')
     for folder in CONFIG['local_folders']:
-        parent_id = root_folder_id
-        for root, _, files in os.walk(folder):
-            print(f'\nSubiendo: {root}')
+        upload_folder_to_drive(folder, root_folder_id)
 
-            parent_id = get_or_create_folder_id(os.path.basename(root), parent_id)
 
-            for file in files:
-                file_name = file[:20] + '...' if len(
-                    file) > 20 else file + '...' + ' ' * (17 - len(file))
-                print(f'\t{file_name}\t', end='\t')
-                file_path = os.path.join(root, file)
-                # Skip empty files
-                if os.path.getsize(file_path) == 0:
-                    print('SALTADO')
-                    continue
+def upload_folder_to_drive(local_folder, parent_id):
+    '''
+    Recursively upload a folder and its contents to Google Drive
+    '''
+    folder_name = os.path.basename(local_folder)
 
-                file_metadata = {
-                    'title': file,
-                    'parents': [{'id': parent_id}]
-                }
+    # Check if the folder has already been processed
+    if folder_name in FOLDER_TREE:
+        folder_id = FOLDER_TREE[folder_name]
+    else:
+        # Create the folder in Google Drive
+        folder_id = create_folder(folder_name, parent_id)
+        FOLDER_TREE[folder_name] = folder_id
 
-                try:
-                    media = DRIVE.CreateFile(file_metadata)
-                    media.SetContentFile(file_path)
-                    media.Upload()
-                    print('OK')
-                except Exception as e:
-                    print('ERROR')
-                    print(e)
-                    continue
+    # Upload files inside the folder
+    for root, _, files in os.walk(local_folder):
+        print(f'\nSubiendo: {root}')
+        for file in files:
+            file_name = file[:20] + \
+                '...' if len(file) > 20 else file + \
+                '...' + ' ' * (17 - len(file))
+            print(f'\t{file_name}\t', end='\t')
+            file_path = os.path.join(root, file)
+
+            # Skip empty files
+            if os.path.getsize(file_path) == 0:
+                print('SALTADO')
+                continue
+
+            file_metadata = {
+                'title': file,
+                'parents': [{'id': folder_id}]
+            }
+
+            try:
+                media = DRIVE.CreateFile(file_metadata)
+                media.SetContentFile(file_path)
+                media.Upload()
+                print('OK')
+            except Exception as e:
+                print('ERROR')
+                print(e)
+                continue
+
+        # Recursively upload subfolders
+        for subfolder in next(os.walk(local_folder))[1]:
+            subfolder_path = os.path.join(root, subfolder)
+            upload_folder_to_drive(subfolder_path, folder_id)
 
 
 def get_or_create_folder_id(name, parent_id):
