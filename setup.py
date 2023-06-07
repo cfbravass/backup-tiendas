@@ -18,8 +18,10 @@ def main():
     global CONFIG
     CONFIG = {
         'drive_folder_id': '',
+        'facturas_folder_id': '',
         'local_folders': [],
-        'days_to_keep': 0,
+        'soporte_facturas': 'V:\\DTECOLOMB2\\DATOS\CB001\\ADJUNTOS\\SOPORTES',
+        'days_to_keep': 3,
     }
     settings()  # 1
     auth()  # 2
@@ -58,6 +60,7 @@ def get_or_create_folder_id(parent_id):
     while name == '':
         name = input('NOMBRE TIENDA: ').strip()
     f_id = get_folder_id(name, parent_id) or create_folder(name, parent_id)
+    CONFIG['facturas_folder_id'] = create_folder('FACTURAS', f_id)
     print('OK\n')
     return f_id
 
@@ -71,7 +74,6 @@ def config():
     get_days_to_keep()
 
     # get drive folder name
-
 
     CONFIG['drive_folder_id'] = get_or_create_folder_id('root')
 
@@ -104,6 +106,17 @@ def get_local_folders():
     '''
     ok = False
     idx = 1
+    print('\n\nIngrese la ruta completa de la carpeta SOPORTES de VisualDTE')
+    print('Por defecto: V:\DTECOLOMB2\DATOS\CB001\ADJUNTOS\SOPORTES')
+    ok_soporte = False
+    while not ok_soporte:
+        inpt = input('SOPORTES: ')
+        if os.path.isdir(inpt):
+            CONFIG['soporte_facturas'] = inpt
+            ok_soporte = True
+        else:
+            print('Revise el path ingresado\n')
+
     print('\n\nIngrese las rutas a carpetas locales:')
     print('\t- deje en blanco para finalizar\n')
     while not ok:

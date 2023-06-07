@@ -1,24 +1,4 @@
 #!/usr/bin/env python3
-'''
-Copyright (C) 2022 Santiago Agudelo
-
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 3 as published by
-the Free Software Foundation.
-
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.
-'''
-
-
 from datetime import datetime
 from drive import Drive
 from utilities import pause_and_exit
@@ -36,8 +16,42 @@ def main():
     check_config()
     remove_old_backups()
     upload_folders()
+    backup_facturas()
     print('\n\n_________________\nBACKUP COMPLETADO\n')
     pause_and_exit()
+
+
+def backup_facturas():
+    print('Backup Facturas:')
+    id_folder_facturas = CONFIG['facturas_folder_id']
+    ruta_facturas = CONFIG['soporte_facturas']
+
+    query = f"'{id_folder_facturas}' in parents and trashed=false"
+    lista_facturas_en_drive = DRIVE.ListFile({'q': query}).GetList()
+    facturas_en_drive = set()
+
+    for factura in lista_facturas_en_drive:
+        nombre_factura = factura['title']
+        facturas_en_drive.add(nombre_factura)
+
+    for root, _, files in os.walk(ruta_facturas):
+        for nombre_archivo in files:
+            ruta_archivo = os.path.join(root, nombre_archivo)
+            if nombre_archivo not in facturas_en_drive:
+                metadata = {
+                    'title': nombre_archivo,
+                    'parents': [{'id': id_folder_facturas}]
+                }
+                print(f'\t{nombre_archivo}', end='\t')
+                try:
+                    media = DRIVE.CreateFile(metadata)
+                    media.SetContentFile(ruta_archivo)
+                    media.Upload()
+                    print('OK')
+                except Exception as e:
+                    print('ERROR')
+                    print(e)
+                    continue
 
 
 def upload_folders():
